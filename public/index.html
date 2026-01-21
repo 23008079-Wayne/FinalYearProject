@@ -85,6 +85,18 @@
                     <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                     <button class="btn btn-primary" onclick="addStock()">Add</button>
                 </div>
+            
+            <!-- Ticker-based News Search -->
+            <div style="margin-bottom: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                <h3 style="margin-top: 0;"> Search News by Ticker</h3>
+                <p style="color: #666; font-size: 0.9rem;">Enter a stock ticker to fetch the latest top 5 news</p>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="tickerSearch" placeholder="Enter stock ticker (e.g., AAPL, TSLA, MSFT)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
+                    <button class="btn btn-primary" onclick="searchNewsByTicker()">Search</button>
+                </div>
+                <div id="newsSearchContainer" style="display: none;"></div>
+            </div>
+
             </div>
                     
             <!-- Top 5 News Articles Section -->

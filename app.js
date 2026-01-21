@@ -15,6 +15,66 @@ app.get("/", (req, res) => {
 // Sentiment Analysis endpoint
 app.post("/analyse-sentiment", analyseSentiment);
 
+// Function to fetch top 5 news articles for a ticker
+async function fetchNewsForTicker(ticker) {
+    try {
+        const fetch = require('node-fetch');
+        const xml2js = require('xml2js');
+
+        const rssUrl = `https://finance.yahoo.com/rss/headline?s=${ticker}`;
+        const response = await fetch(rssUrl);
+        const xml = await response.text();
+        const result = await xml2js.parseStringPromise(xml);
+        
+        function getTimeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) return interval + " year" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) return interval + " month" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) return interval + " day" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + " hour" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) return interval + " minute" + (interval > 1 ? "s" : "") + " ago";
+            return Math.floor(seconds) + " second" + (seconds > 1 ? "s" : "") + " ago";
+        }
+        
+        const items = result.rss.channel[0].item.slice(0, 5).map((item, idx) => {
+            const pubDate = item.pubDate ? new Date(item.pubDate[0]) : null;
+            const timeAgo = pubDate ? getTimeAgo(pubDate) : "Unknown";
+            return {
+                id: idx + 1,
+                title: item.title[0],
+                url: item.link[0],
+                pubDate: pubDate,
+                timeAgo: timeAgo,
+                source: "Yahoo Finance",
+                ticker: ticker
+            };
+        });
+        
+        return items;
+    } catch (err) {
+        console.error('Error fetching news:', err);
+        return [];
+    }
+}
+
+// Search news endpoint
+app.post("/search-news", async (req, res) => {
+    const { ticker } = req.body;
+    
+    if (!ticker || ticker.length === 0) {
+        return res.json({ articles: [] });
+    }
+    
+    const articles = await fetchNewsForTicker(ticker);
+    res.json({ articles: articles });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(` FinanceAI server running on http://localhost:${PORT}`);
