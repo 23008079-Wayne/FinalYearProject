@@ -420,16 +420,20 @@ function renderNewsArticles() {
     
     if (!container) return;
     
+    if (currentNewsArticles.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>No articles loaded. Use the search above to fetch news by ticker.</p></div>';
+        return;
+    }
+    
     container.innerHTML = currentNewsArticles.map(article => `
-        <div class="news-article-card">
+        <div class="article">
             <div class="article-meta">
                 <span class="source-badge">${article.source}</span>
-                <span class="ticker-badge">${article.ticker}</span>
                 <span class="timestamp">${article.timeAgo}</span>
             </div>
-            <a href="${article.url}" target="_blank" class="article-title">${article.title}</a>
+            <p><a href="${article.url}" target="_blank">${article.title}</a></p>
             <div class="article-actions">
-                <button class="analyse-btn" onclick="analyseArticle('${article.url}', 'result-${article.id}')">📊 Analyze Sentiment</button>
+                <button class="analyse-btn" onclick="analyseArticle('${article.url}', 'result-${article.id}')">Analyse Sentiment</button>
             </div>
             <div id="result-${article.id}" class="analysis-result" style="display:none;"></div>
         </div>
@@ -496,7 +500,7 @@ async function analyzeSentiment() {
 async function analyseArticle(url, resultDivId) {
     const resultDiv = document.getElementById(resultDivId);
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="text-align: center; padding: 15px;"><div style="display: inline-block; width: 30px; height: 30px; border: 2px solid #e0e0e0; border-top: 2px solid #3E92CC; border-radius: 50%; animation: spin 1s linear infinite;"></div></div>';
+    resultDiv.innerHTML = '<div class="loading"></div> Analysing sentiment...';
 
     try {
         const response = await fetch('/analyse-sentiment', {
@@ -511,10 +515,12 @@ async function analyseArticle(url, resultDivId) {
         const confidencePercent = Math.round(data.confidence * 100);
 
         resultDiv.innerHTML = `
-            <div class="sentiment-badge ${sentimentClass}" style="font-weight: 600; padding: 8px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;">${data.sentiment}</div>
+            <div class="sentiment-badge ${sentimentClass}">
+                ${data.sentiment}
+            </div>
             <div class="result-item">
                 <div class="result-label">Confidence Score</div>
-                <div class="result-value">${Math.round(data.confidence * 100)}%</div>
+                <div class="result-value">${data.confidence.toFixed(2)}</div>
                 <div class="confidence-bar">
                     <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
                 </div>
@@ -525,7 +531,8 @@ async function analyseArticle(url, resultDivId) {
             </div>
         `;
     } catch (error) {
-        resultDiv.innerHTML = '<div style="color: #FF6B6B;">Analysis failed. Please try again.</div>';
+        resultDiv.innerHTML = '<div class="result-value" style="color: #fca5a5;">Analysis failed. Please try again.</div>';
+        console.error('Analysis error:', error);
     }
 }
 
