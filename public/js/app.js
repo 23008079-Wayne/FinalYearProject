@@ -196,6 +196,7 @@ const marketInsights = [
 let watchlist = [];
 let currentCalendarFilter = 'all';
 let currentInsightFilter = 'all';
+let currentNewsArticles = topNewsArticles;
 
 // ===== WATCHLIST FUNCTIONS =====
 
@@ -380,12 +381,46 @@ function filterInsightsBySentiment(insights, sentiment) {
 
 // ===== NEWS ARTICLES FUNCTIONS =====
 
+async function searchNewsByTicker() {
+    const ticker = document.getElementById('tickerSearch').value.trim().toUpperCase();
+    
+    if (!ticker) {
+        alert('Please enter a stock ticker');
+        return;
+    }
+    
+    const resultDiv = document.getElementById('newsSearchContainer');
+    resultDiv.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top: 3px solid #3E92CC; border-radius: 50%; animation: spin 1s linear infinite;"></div></div><p style="text-align: center; color: #666;">Fetching news for ' + ticker + '...</p>';
+    
+    try {
+        const response = await fetch('/search-news', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticker: ticker })
+        });
+        
+        const data = await response.json();
+        
+        if (data.articles && data.articles.length > 0) {
+            currentNewsArticles = data.articles;
+            renderNewsArticles();
+            resultDiv.style.display = 'none';
+            document.getElementById('tickerSearch').value = '';
+        } else {
+            resultDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;"><p>No news articles found for ' + ticker + '. Try another ticker.</p></div>';
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div style="color: #FF6B6B; text-align: center; padding: 20px;">Error fetching news. Please try again.</div>';
+        console.error('News search error:', error);
+    }
+}
+
 function renderNewsArticles() {
     const container = document.getElementById('newsArticlesContainer');
     
     if (!container) return;
     
-    container.innerHTML = topNewsArticles.map(article => `
+    container.innerHTML = currentNewsArticles.map(article => `
         <div class="news-article-card">
             <div class="article-meta">
                 <span class="source-badge">${article.source}</span>
@@ -435,29 +470,21 @@ async function analyzeSentiment() {
             'sentiment-neutral';
 
         const confidencePercent = Math.round(data.confidence * 100);
-        const sentimentEmoji =
-            data.sentiment === 'POSITIVE' ? '📈' :
-            data.sentiment === 'NEGATIVE' ? '📉' :
-            '➡️';
 
         resultDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                <div>
-                    <div style="font-size: 3rem; margin-bottom: 10px;">${sentimentEmoji}</div>
-                    <div class="sentiment-badge ${sentimentClass}" style="font-weight: 700; padding: 10px 16px; border-radius: 20px; display: inline-block;">${data.sentiment}</div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 8px;">Confidence Score</div>
-                    <div style="font-size: 2.5rem; font-weight: bold; color: #0A2463;">${confidencePercent}%</div>
-                    <div class="confidence-bar" style="width: 200px; height: 8px; background: rgba(148, 163, 184, 0.2); margin-top: 10px; border-radius: 4px; overflow: hidden;">
-                        <div class="confidence-fill" style="height: 100%; background: linear-gradient(90deg, #3E92CC, #52F3B4); width: ${confidencePercent}%; border-radius: 4px;"></div>
-                    </div>
+            <div style="margin-bottom: 16px;">
+                <div class="sentiment-badge ${sentimentClass}" style="font-weight: 700; padding: 10px 16px; border-radius: 20px; display: inline-block;">${data.sentiment}</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Confidence Score</div>
+                <div class="result-value">${data.confidence.toFixed(2)}</div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
                 </div>
             </div>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
-            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 10px;">Summary</div>
-                <div style="color: #333; line-height: 1.6; font-size: 0.95rem;">${data.summary}</div>
+            <div class="result-item">
+                <div class="result-label">Summary</div>
+                <div class="result-value">${data.summary}</div>
             </div>
         `;
     } catch (error) {
