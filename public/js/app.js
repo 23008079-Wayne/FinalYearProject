@@ -442,61 +442,6 @@ function renderNewsArticles() {
 
 // ===== SENTIMENT ANALYSIS FUNCTIONS =====
 
-async function analyzeSentiment() {
-    const url = document.getElementById('sentimentUrl').value.trim();
-
-    if (!url) {
-        alert('Please enter a valid URL');
-        return;
-    }
-
-    if (!url.startsWith('http')) {
-        alert('URL must start with http:// or https://');
-        return;
-    }
-
-    const resultDiv = document.getElementById('sentimentResult');
-    resultDiv.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top: 3px solid #3E92CC; border-radius: 50%; animation: spin 1s linear infinite;"></div></div><p style="text-align: center; color: #666;">Analyzing sentiment...</p>';
-    resultDiv.style.display = 'block';
-
-    try {
-        const response = await fetch('/analyse-sentiment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: url })
-        });
-
-        const data = await response.json();
-
-        const sentimentClass =
-            data.sentiment === 'POSITIVE' ? 'sentiment-positive' : 
-            data.sentiment === 'NEGATIVE' ? 'sentiment-negative' :
-            'sentiment-neutral';
-
-        const confidencePercent = Math.round(data.confidence * 100);
-
-        resultDiv.innerHTML = `
-            <div style="margin-bottom: 16px;">
-                <div class="sentiment-badge ${sentimentClass}" style="font-weight: 700; padding: 10px 16px; border-radius: 20px; display: inline-block;">${data.sentiment}</div>
-            </div>
-            <div class="result-item">
-                <div class="result-label">Confidence Score</div>
-                <div class="result-value">${data.confidence.toFixed(2)}</div>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
-                </div>
-            </div>
-            <div class="result-item">
-                <div class="result-label">Summary</div>
-                <div class="result-value">${data.summary}</div>
-            </div>
-        `;
-    } catch (error) {
-        resultDiv.innerHTML = '<div style="color: #FF6B6B; text-align: center; padding: 20px;">Error analyzing sentiment. Please try again.</div>';
-        console.error('Sentiment analysis error:', error);
-    }
-}
-
 async function analyseArticle(url, resultDivId) {
     const resultDiv = document.getElementById(resultDivId);
     resultDiv.style.display = 'block';

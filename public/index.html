@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="FinanceAI - Stock watchlist with market calendar and insights">
+    <meta name="description" content="FinanceAI - Stock watchlist with market calendar and insights">     
     <title>FinanceAI - Watchlist, Calendar & Insights</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -31,7 +31,7 @@
         <section class="card" id="watchlist">
             <div class="section-header">
                 <h2> Watchlist</h2>
-                <button class="btn btn-primary" onclick="showAddStockModal()">+ Add Stock</button>
+                <button class="btn btn-primary" onclick="showAddStockModal()">+ Add Stock</button>        
             </div>
             <div id="watchlistContainer" class="stock-grid"></div>
         </section>
@@ -40,7 +40,7 @@
         <section class="card" id="calendar">
             <div class="section-header">
                 <h2> Economic Calendar</h2>
-                <select id="calendarFilter" class="filter-select" onchange="filterCalendarEvents()">
+                <select id="calendarFilter" class="filter-select" onchange="filterCalendarEvents()">      
                     <option value="all">All Events</option>
                     <option value="high">High Impact</option>
                     <option value="medium">Medium Impact</option>
@@ -62,15 +62,16 @@
                 </select>
             </div>
 
-            <!-- Sentiment Analysis Sub-section -->
-            <div style="margin-bottom: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-                <h3 style="margin-top: 0;">📊 News Sentiment Analysis</h3>
-                <p style="color: #666; font-size: 0.9rem;">Analyze sentiment of any news article or URL</p>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <input type="url" id="sentimentUrl" placeholder="Enter article URL (e.g., https://example.com/news)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-                    <button class="btn btn-primary" onclick="analyzeSentiment()">Analyze</button>
+            <!-- News Sentiment Analysis (Ticker-based) -->
+            <div class="news-sentiment-section">
+                <h3> News Sentiment Analysis</h3>
+                <p>Enter a stock ticker to fetch the latest top 5 news and analyze their sentiment</p>
+                <div class="search-form">
+                    <input type="text" id="tickerSearch" placeholder="Enter stock ticker (e.g., AAPL, TSLA, MSFT)" maxlength="5">
+                    <button class="btn btn-primary" onclick="searchNewsByTicker()">Search & Analyze</button>
                 </div>
-                <div id="sentimentResult" style="display: none; padding: 15px; background: white; border-radius: 4px; margin-top: 10px;"></div>
+                <div id="newsSearchContainer" style="display: none;"></div>
+                <div id="newsArticlesContainer" class="news-articles-grid"></div>
             </div>
 
             <div id="insightsContainer" class="insights-grid"></div>
@@ -80,30 +81,13 @@
         <div id="addStockModal" class="modal">
             <div class="modal-content">
                 <h3>Add Stock to Watchlist</h3>
-                <input type="text" id="stockSymbol" placeholder="Stock Symbol (e.g., AAPL)" required>
+                <input type="text" id="stockSymbol" placeholder="Stock Symbol (e.g., AAPL)" required>     
                 <div class="modal-actions">
                     <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                     <button class="btn btn-primary" onclick="addStock()">Add</button>
                 </div>
-            
-            <!-- Ticker-based News Search -->
-            <div style="margin-bottom: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-                <h3 style="margin-top: 0;"> Search News by Ticker</h3>
-                <p style="color: #666; font-size: 0.9rem;">Enter a stock ticker to fetch the latest top 5 news</p>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <input type="text" id="tickerSearch" placeholder="Enter stock ticker (e.g., AAPL, TSLA, MSFT)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; text-transform: uppercase;">
-                    <button class="btn btn-primary" onclick="searchNewsByTicker()">Search</button>
-                </div>
-                <div id="newsSearchContainer" style="display: none;"></div>
             </div>
-
-            </div>
-                    
-            <!-- Top 5 News Articles Section -->
-            <div style="margin-bottom: 30px; padding: 0;">
-                <h3 style="margin-top: 30px; margin-bottom: 15px;"> Top 5 Financial News</h3>
-                <div id="newsArticlesContainer" class="news-articles-grid"></div>
-            </div></div>
+        </div>
     </main>
 
     <footer>
