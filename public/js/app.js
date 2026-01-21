@@ -356,3 +356,75 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') addStock();
     });
 });
+
+// ===== SENTIMENT ANALYSIS FUNCTIONS =====
+async function analyzeSentiment() {
+    const url = document.getElementById('sentimentUrl').value.trim();
+    
+    if (!url) {
+        alert('Please enter a valid URL');
+        return;
+    }
+    
+    if (!url.startsWith('http')) {
+        alert('URL must start with http:// or https://');
+        return;
+    }
+
+    const resultDiv = document.getElementById('sentimentResult');
+    resultDiv.innerHTML = '<div class="loading"></div> Analyzing sentiment...';
+    resultDiv.style.display = 'block';
+
+    try {
+        const response = await fetch('/analyse-sentiment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
+
+        const data = await response.json();
+
+        // Determine sentiment styling
+        const sentimentClass = 
+            data.sentiment === 'POSITIVE' ? 'sentiment-positive' : 
+            data.sentiment === 'NEGATIVE' ? 'sentiment-negative' : 
+            'sentiment-neutral';
+
+        const confidencePercent = Math.round(data.confidence * 100);
+        const sentimentEmoji = 
+            data.sentiment === 'POSITIVE' ? '' :
+            data.sentiment === 'NEGATIVE' ? '' :
+            '';
+
+        resultDiv.innerHTML = \
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">\</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #333;">\</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; color: #666;">Confidence Score</div>
+                    <div style="font-size: 2rem; font-weight: bold; color: #0066cc;">\%</div>
+                </div>
+            </div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+            <div style="background: #f9f9f9; padding: 12px; border-radius: 4px; margin-top: 10px;">
+                <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 8px;">Summary</div>
+                <div style="color: #333; line-height: 1.5;">\</div>
+            </div>
+        \;
+    } catch (error) {
+        resultDiv.innerHTML = '<div style="color: #d32f2f;">Error analyzing sentiment. Please try again.</div>';
+        console.error('Sentiment analysis error:', error);
+    }
+}
+
+// Allow Enter key to submit sentiment analysis
+document.addEventListener('DOMContentLoaded', () => {
+    const sentimentUrl = document.getElementById('sentimentUrl');
+    if (sentimentUrl) {
+        sentimentUrl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') analyzeSentiment();
+        });
+    }
+});
