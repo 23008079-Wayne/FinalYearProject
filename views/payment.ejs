@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Plans - Stock Sentiment Analyzer</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/payment.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <a href="/">📊 Sentiment Analyzer</a>
+      </div>
+      <ul class="nav-links">
+        <li><a href="/" class="nav-link">Sentiment Analysis</a></li>
+        <li><a href="/pricing" class="nav-link active">Upgrade Plan</a></li>
+        <% if (user) { %>
+          <li style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <span style="color: #94a3b8;">Welcome, <strong><%= user.username %></strong></span>
+            <span style="background: #60a5fa; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;"><%= user.plan.toUpperCase() %></span>
+            <a href="/logout" class="nav-link" style="margin: 0;">Logout</a>
+          </li>
+        <% } else { %>
+          <li style="margin-left: auto;">
+            <a href="/login" class="nav-link">Login</a>
+          </li>
+        <% } %>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header>
+      <h1>💳 Premium Plans</h1>
+      <p>Unlock advanced sentiment analysis features</p>
+    </header>
+
+    <div class="pricing-section">
+      <div class="pricing-cards">
+        <!-- Free Plan -->
+        <div class="pricing-card free">
+          <div class="plan-name">Free</div>
+          <div class="plan-price">$0<span>/month</span></div>
+          <ul class="plan-features">
+            <li>✓ 5 analyses per day</li>
+            <li>✓ Basic sentiment analysis</li>
+            <li>✗ No summary generation</li>
+            <li>✗ Email support</li>
+          </ul>
+          <button class="plan-btn current">Current Plan</button>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="pricing-card pro featured">
+          <div class="badge">MOST POPULAR</div>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">$9.99<span>/month</span></div>
+          <ul class="plan-features">
+            <li>✓ Unlimited analyses</li>
+            <li>✓ Advanced sentiment analysis</li>
+            <li>✓ AI-powered summaries</li>
+            <li>✓ Email support</li>
+            <li>✓ Historical tracking</li>
+          </ul>
+          <button class="plan-btn upgrade-btn" onclick="selectPlan('pro', 999)">Upgrade to Pro</button>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="pricing-card enterprise">
+          <div class="plan-name">Enterprise</div>
+          <div class="plan-price">$49.99<span>/month</span></div>
+          <ul class="plan-features">
+            <li>✓ Unlimited everything</li>
+            <li>✓ Real-time alerts</li>
+            <li>✓ API access</li>
+            <li>✓ Priority support</li>
+            <li>✓ Custom integrations</li>
+          </ul>
+          <button class="plan-btn upgrade-btn" onclick="selectPlan('enterprise', 4999)">Upgrade to Enterprise</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="payment-modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">Complete Your Purchase</h2>
+          <button class="close-btn" onclick="closePaymentModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Payment Method Selection -->
+          <div class="payment-methods">
+            <label class="payment-option">
+              <input type="radio" name="payment-method" value="stripe" checked>
+              <span class="method-name">💳 Stripe (Card)</span>
+            </label>
+            <label class="payment-option">
+              <input type="radio" name="payment-method" value="paypal">
+              <span class="method-name">🅿️ PayPal</span>
+            </label>
+          </div>
+
+          <!-- Stripe Form -->
+          <div id="stripeForm" class="payment-form">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="email" placeholder="your@email.com" required>
+            </div>
+
+            <div class="form-group">
+              <label>Card Details</label>
+              <div id="card-element"></div>
+              <div id="card-errors" style="color: #fca5a5; margin-top: 8px;"></div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="saveCard" checked>
+                Save this card for future purchases
+              </label>
+            </div>
+
+            <button class="btn-pay" onclick="processStripePayment()">
+              Pay <span id="priceDisplay">$9.99</span>
+            </button>
+          </div>
+
+          <!-- PayPal Form -->
+          <div id="paypalForm" class="payment-form" style="display:none;">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="paypalEmail" placeholder="your@email.com" required>
+            </div>
+
+            <div id="paypal-button-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="paymentOverlay" class="payment-overlay" style="display:none;" onclick="closePaymentModal()"></div>
+  </div>
+
+  <!-- Stripe Script -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- PayPal Script (loaded dynamically) -->
+
+  <script>
+    let stripe, elements, cardElement;
+    let selectedPlan = null;
+    let selectedAmount = null;
+
+    // Initialize Stripe
+    async function initStripe() {
+      const response = await fetch('/get-stripe-key');
+      const { stripePublicKey } = await response.json();
+      stripe = Stripe(stripePublicKey);
+      elements = stripe.elements();
+      cardElement = elements.create('card');
+      cardElement.mount('#card-element');
+
+      cardElement.on('change', function(event) {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+          displayError.textContent = event.error.message;
+        } else {
+          displayError.textContent = '';
+        }
+      });
+    }
+
+    // Initialize PayPal
+    async function initPayPal() {
+      const response = await fetch('/get-paypal-id');
+      const { paypalClientId } = await response.json();
+      
+      if (!paypalClientId) {
+        console.error('PayPal Client ID not configured');
+        return;
+      }
+
+      // Dynamically load PayPal SDK
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
+      script.async = true;
+      script.onload = () => {
+        paypal.Buttons({
+          createOrder: (data, actions) => {
+            const email = document.getElementById('paypalEmail').value;
+            if (!email) {
+              alert('Please enter your email');
+              return;
+            }
+            
+            return actions.order.create({
+              purchase_units: [{
+                amount: { 
+                  value: (selectedAmount / 100).toFixed(2)
+                },
+                description: `${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan Subscription`
+              }]
+            });
+          },
+          onApprove: (data, actions) => {
+            return actions.order.capture().then(details => {
+              alert('Payment successful! You now have access to ' + selectedPlan + ' features.');
+              closePaymentModal();
+            });
+          },
+          onError: (err) => {
+            alert('Payment failed. Please try again.');
+            console.error(err);
+          }
+        }).render('#paypal-button-container');
+      };
+      document.body.appendChild(script);
+    }
+
+    function selectPlan(plan, amount) {
+      selectedPlan = plan;
+      selectedAmount = amount;
+      const price = (amount / 100).toFixed(2);
+      document.getElementById('priceDisplay').textContent = '$' + price;
+      document.getElementById('modalTitle').textContent = `Upgrade to ${plan.charAt(0).toUpperCase() + plan.slice(1)}`;
+      openPaymentModal();
+    }
+
+    function openPaymentModal() {
+      document.getElementById('paymentModal').style.display = 'block';
+      document.getElementById('paymentOverlay').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closePaymentModal() {
+      document.getElementById('paymentModal').style.display = 'none';
+      document.getElementById('paymentOverlay').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    // Handle payment method switch
+    document.addEventListener('change', function(e) {
+      if (e.target.name === 'payment-method') {
+        if (e.target.value === 'stripe') {
+          document.getElementById('stripeForm').style.display = 'block';
+          document.getElementById('paypalForm').style.display = 'none';
+        } else {
+          document.getElementById('stripeForm').style.display = 'none';
+          document.getElementById('paypalForm').style.display = 'block';
+        }
+      }
+    });
+
+    async function processStripePayment() {
+      const email = document.getElementById('email').value;
+      if (!email) {
+        alert('Please enter your email');
+        return;
+      }
+
+      const response = await fetch('/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: selectedAmount,
+          plan: selectedPlan,
+          email: email
+        })
+      });
+
+      const { clientSecret } = await response.json();
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: { email: email }
+        }
+      });
+
+      if (result.error) {
+        document.getElementById('card-errors').textContent = result.error.message;
+      } else {
+        alert('Payment successful! You now have access to ' + selectedPlan + ' features.');
+        closePaymentModal();
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      initStripe();
+      initPayPal();
+    });
+  </script>
+</body>
+</html>
