@@ -34,12 +34,25 @@ const CashAccount = sequelize.define('CashAccount', {
 CashAccount.belongsTo(User);
 User.hasOne(CashAccount);
 
+const SentimentAnalysis = sequelize.define('SentimentAnalysis', {
+  url: { type: DataTypes.STRING, allowNull: false },
+  title: { type: DataTypes.STRING },
+  ticker: { type: DataTypes.STRING },
+  sentiment: { type: DataTypes.ENUM('POSITIVE', 'NEGATIVE', 'NEUTRAL'), allowNull: false },
+  confidence: { type: DataTypes.FLOAT, allowNull: false },
+  summary: { type: DataTypes.TEXT },
+  notes: { type: DataTypes.TEXT, defaultValue: '' },
+  isFavorite: { type: DataTypes.BOOLEAN, defaultValue: false }
+});
+SentimentAnalysis.belongsTo(User);
+User.hasMany(SentimentAnalysis);
+
 async function init() {
   await sequelize.sync({ force: false });
   // create demo user if not exists
   const [u] = await User.findOrCreate({ where: { name: 'dev_user' }});
   const [cash] = await CashAccount.findOrCreate({ where: { UserId: u.id }, defaults: { balance: 10000 }});
-  return { sequelize, User, WatchlistItem, PortfolioPosition, Transaction, CashAccount };
+  return { sequelize, User, WatchlistItem, PortfolioPosition, Transaction, CashAccount, SentimentAnalysis };
 }
 
 module.exports = { init };

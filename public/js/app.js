@@ -14,40 +14,40 @@ const mockStocks = {
 const topNewsArticles = [
     {
         id: 1,
-        title: 'Apple Reports Record Q4 Earnings, Stock Rises 2.5%',
-        url: 'https://finance.yahoo.com/news/apple-q4-earnings',
-        source: 'Yahoo Finance',
+        title: 'Stock Market Today: Dow, S&P 500 Close Higher on Strong Earnings',
+        url: 'https://www.cnbc.com/2024/01/16/stock-market-today-live-updates.html',
+        source: 'CNBC',
         timeAgo: '2 hours ago',
         ticker: 'AAPL'
     },
     {
         id: 2,
-        title: 'Tesla Faces Production Challenges, Misses Quarterly Targets',
-        url: 'https://finance.yahoo.com/news/tesla-production-miss',
-        source: 'Bloomberg',
+        title: 'Tech Stocks Rally as AI Investments Drive Growth',
+        url: 'https://www.reuters.com/technology/',
+        source: 'Reuters',
         timeAgo: '4 hours ago',
         ticker: 'TSLA'
     },
     {
         id: 3,
-        title: 'Microsoft Cloud Services Reach New Heights, Exceeds Expectations',
-        url: 'https://finance.yahoo.com/news/microsoft-cloud-growth',
-        source: 'Reuters',
+        title: 'Market Report: Earnings Season Delivers Mixed Results',
+        url: 'https://www.bloomberg.com/news/articles/2024-01-16/earnings-season-market-update',
+        source: 'Bloomberg',
         timeAgo: '6 hours ago',
         ticker: 'MSFT'
     },
     {
         id: 4,
-        title: 'Google Announces AI Breakthrough, Stock Gains 1.8%',
-        url: 'https://finance.yahoo.com/news/google-ai-breakthrough',
-        source: 'CNBC',
+        title: 'Investing: How to Navigate Market Volatility',
+        url: 'https://finance.yahoo.com/news/',
+        source: 'Yahoo Finance',
         timeAgo: '8 hours ago',
         ticker: 'GOOGL'
     },
     {
         id: 5,
-        title: 'JPMorgan Chase Strengthens Market Position with Strategic Moves',
-        url: 'https://finance.yahoo.com/news/jpm-strategic-moves',
+        title: 'Financial Markets: Banking Sector Shows Resilience',
+        url: 'https://www.marketwatch.com/investing/index/spx',
         source: 'MarketWatch',
         timeAgo: '10 hours ago',
         ticker: 'JPM'
@@ -197,6 +197,8 @@ let watchlist = [];
 let currentCalendarFilter = 'all';
 let currentInsightFilter = 'all';
 let currentNewsArticles = topNewsArticles;
+let currentAnalysis = null;
+let savedAnalyses = [];
 
 // ===== WATCHLIST FUNCTIONS =====
 
@@ -440,8 +442,6 @@ function renderNewsArticles() {
     `).join('');
 }
 
-// ===== SENTIMENT ANALYSIS FUNCTIONS =====
-
 async function analyseArticle(url, resultDivId) {
     const resultDiv = document.getElementById(resultDivId);
     resultDiv.style.display = 'block';
@@ -459,6 +459,14 @@ async function analyseArticle(url, resultDivId) {
                              data.sentiment === 'NEGATIVE' ? 'sentiment-negative' : 'sentiment-neutral';
         const confidencePercent = Math.round(data.confidence * 100);
 
+        // Store current analysis for saving
+        currentAnalysis = {
+            url: url,
+            sentiment: data.sentiment,
+            confidence: data.confidence,
+            summary: data.summary
+        };
+
         resultDiv.innerHTML = `
             <div class="sentiment-badge ${sentimentClass}">
                 ${data.sentiment}
@@ -474,12 +482,211 @@ async function analyseArticle(url, resultDivId) {
                 <div class="result-label">Summary</div>
                 <div class="result-value">${data.summary}</div>
             </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="showSaveAnalysisModal('${url}', '${data.sentiment}', ${data.confidence}, '${data.summary.replace(/'/g, "\\'")}')">💾 Save This Analysis</button>
         `;
     } catch (error) {
         resultDiv.innerHTML = '<div class="result-value" style="color: #fca5a5;">Analysis failed. Please try again.</div>';
         console.error('Analysis error:', error);
     }
 }
+
+function showSaveAnalysisModal(url, sentiment, confidence, summary) {
+    const previewDiv = document.getElementById('analysisPreview');
+    previewDiv.innerHTML = `
+        <strong>URL:</strong> ${url.substring(0, 50)}...<br>
+        <strong>Sentiment:</strong> <span style="color: ${sentiment === 'POSITIVE' ? '#10B981' : sentiment === 'NEGATIVE' ? '#FF6B6B' : '#3E92CC'}">${sentiment}</span><br>
+        <strong>Confidence:</strong> ${(confidence * 100).toFixed(0)}%
+    `;
+    document.getElementById('analysisNotes').value = '';
+    document.getElementById('saveAnalysisModal').classList.add('active');
+}
+
+function closeSaveModal() {
+    document.getElementById('saveAnalysisModal').classList.remove('active');
+}
+
+async function saveAnalysisToServer() {
+    if (!currentAnalysis) {
+        return;
+    }
+
+    const notes = document.getElementById('analysisNotes').value;
+    
+    try {
+        const response = await fetch('/analyses/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                url: currentAnalysis.url,
+                sentiment: currentAnalysis.sentiment,
+                confidence: currentAnalysis.confidence,
+                summary: currentAnalysis.summary,
+                notes: notes
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            closeSaveModal();
+            loadSavedAnalyses();
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+    }
+}
+
+async function loadSavedAnalyses() {
+    try {
+        const response = await fetch('/analyses');
+        const data = await response.json();
+        savedAnalyses = data.analyses;
+        renderSavedAnalyses();
+    } catch (error) {
+        console.error('Error loading analyses:', error);
+    }
+}
+
+function renderSavedAnalyses() {
+    const container = document.getElementById('savedAnalysesContainer');
+    const emptyState = document.getElementById('emptyAnalysesState');
+
+    if (savedAnalyses.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    
+    container.innerHTML = savedAnalyses.map(analysis => `
+        <div class="saved-analysis-card" id="card-${analysis.id}">
+            <div class="analysis-header">
+                <div>
+                    <div class="analysis-url">${analysis.url.substring(0, 60)}...</div>
+                    <div class="analysis-date">${new Date(analysis.createdAt).toLocaleString()}</div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="favorite-btn" onclick="toggleFavorite(${analysis.id})" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px;">
+                        ${analysis.isFavorite ? '⭐' : '☆'}
+                    </button>
+                    <div class="sentiment-badge sentiment-${analysis.sentiment.toLowerCase()}">
+                        ${analysis.sentiment}
+                    </div>
+                </div>
+            </div>
+            <div class="analysis-confidence">
+                <strong>Confidence:</strong> ${(analysis.confidence * 100).toFixed(0)}%
+            </div>
+            <div class="analysis-summary">
+                <strong>Summary:</strong> ${analysis.summary.substring(0, 100)}...
+            </div>
+            <div class="analysis-notes-section">
+                <strong>Notes:</strong>
+                <div id="notes-display-${analysis.id}" class="notes-display">
+                    ${analysis.notes ? `<span id="note-text-${analysis.id}">${analysis.notes}</span>` : '<span id="note-text-' + analysis.id + '"><em>No notes yet</em></span>'}
+                </div>
+                <div id="notes-editor-${analysis.id}" class="notes-editor" style="display: none;">
+                    <textarea id="notes-textarea-${analysis.id}" style="width: 100%; padding: 8px; border: 2px solid #3E92CC; border-radius: 4px; font-family: Arial; font-size: 0.9rem; min-height: 80px;">${analysis.notes || ''}</textarea>
+                </div>
+            </div>
+            <div class="analysis-actions">
+                <button class="btn btn-secondary btn-small" id="edit-btn-${analysis.id}" onclick="toggleEditNotes(${analysis.id})">✏️ Edit Notes</button>
+                <button class="btn btn-secondary btn-small" id="cancel-btn-${analysis.id}" onclick="cancelEditNotes(${analysis.id})" style="display: none; background: #FFA500; color: white;">Cancel</button>
+                <button class="btn btn-secondary btn-small" id="save-btn-${analysis.id}" onclick="saveNotes(${analysis.id})" style="display: none; background: #10B981; color: white;">✅ Save</button>
+                <button class="btn btn-secondary btn-small" style="background: #FF6B6B; color: white;" onclick="deleteAnalysis(${analysis.id})">🗑️ Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleEditNotes(id) {
+    const display = document.getElementById(`notes-display-${id}`);
+    const editor = document.getElementById(`notes-editor-${id}`);
+    const editBtn = document.getElementById(`edit-btn-${id}`);
+    const saveBtn = document.getElementById(`save-btn-${id}`);
+    const cancelBtn = document.getElementById(`cancel-btn-${id}`);
+    const textarea = document.getElementById(`notes-textarea-${id}`);
+    
+    display.style.display = 'none';
+    editor.style.display = 'block';
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+    
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+function cancelEditNotes(id) {
+    const display = document.getElementById(`notes-display-${id}`);
+    const editor = document.getElementById(`notes-editor-${id}`);
+    const editBtn = document.getElementById(`edit-btn-${id}`);
+    const saveBtn = document.getElementById(`save-btn-${id}`);
+    const cancelBtn = document.getElementById(`cancel-btn-${id}`);
+    
+    display.style.display = 'block';
+    editor.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+    saveBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+}
+
+async function saveNotes(id) {
+    const textarea = document.getElementById(`notes-textarea-${id}`);
+    const newNotes = textarea.value;
+    
+    try {
+        const response = await fetch(`/analyses/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes: newNotes })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            loadSavedAnalyses();
+        }
+    } catch (error) {
+        console.error('Save notes error:', error);
+    }
+}
+
+async function toggleFavorite(id) {
+    try {
+        const analysis = savedAnalyses.find(a => a.id === id);
+        if (!analysis) return;
+        
+        const response = await fetch(`/analyses/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isFavorite: !analysis.isFavorite })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            loadSavedAnalyses();
+        }
+    } catch (error) {
+        console.error('Toggle favorite error:', error);
+    }
+}
+
+async function deleteAnalysis(id) {
+    try {
+        const response = await fetch(`/analyses/${id}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            loadSavedAnalyses();
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+    }
+}
+
+// ===== SENTIMENT ANALYSIS FUNCTIONS =====
 
 // ===== NAVBAR FUNCTIONS =====
 
@@ -525,16 +732,25 @@ function initNavbar() {
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
     initNavbar();
+    loadSavedAnalyses();
 
     // Close modal on escape key
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            closeModal();
+            closeSaveModal();
+        }
     });
 
     // Close modal when clicking outside
     const modal = document.getElementById('addStockModal');
     window.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
+    });
+
+    const saveModal = document.getElementById('saveAnalysisModal');
+    window.addEventListener('click', (e) => {
+        if (e.target === saveModal) closeSaveModal();
     });
 
     // Add Enter key support in modal

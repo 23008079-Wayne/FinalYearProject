@@ -1,11 +1,28 @@
 const express = require("express");
 const path = require("path");
 const app = express();
-const { analyseSentiment } = require("./controllers/sentimentController");
+const { 
+  initializeModels,
+  analyseSentiment, 
+  saveAnalysis, 
+  getAnalyses, 
+  getAnalysis, 
+  updateAnalysis, 
+  deleteAnalysis 
+} = require("./controllers/sentimentController");
+const { init: initDatabase } = require("./models");
 
 // Serve static files from the public directory
 app.use(express.static("public"));
 app.use(express.json());
+
+// Initialize database and models
+let models = null;
+(async () => {
+  models = await initDatabase();
+  initializeModels(models);
+  console.log('✅ Database and sentiment models initialized');
+})();
 
 // Serve index.html at root
 app.get("/", (req, res) => {
@@ -15,10 +32,17 @@ app.get("/", (req, res) => {
 // Sentiment Analysis endpoint
 app.post("/analyse-sentiment", analyseSentiment);
 
+// CRUD endpoints for sentiment analyses
+app.post("/analyses/save", saveAnalysis);        // Create
+app.get("/analyses", getAnalyses);              // Read all
+app.get("/analyses/:id", getAnalysis);          // Read one
+app.put("/analyses/:id", updateAnalysis);       // Update
+app.delete("/analyses/:id", deleteAnalysis);    // Delete
+
 // Function to fetch top 5 news articles for a ticker
 async function fetchNewsForTicker(ticker) {
     try {
-        const fetch = require('node-fetch');
+        const fetch = (await import('node-fetch')).default;
         const xml2js = require('xml2js');
 
         const rssUrl = `https://finance.yahoo.com/rss/headline?s=${ticker}`;
