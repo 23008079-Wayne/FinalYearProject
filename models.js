@@ -1,6 +1,8 @@
 // Sequelize models
 const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = new Sequelize({ dialect: 'sqlite', storage: './data.sqlite', logging: false });
+const path = require('path');
+const dbPath = path.join(__dirname, 'data.sqlite');
+const sequelize = new Sequelize({ dialect: 'sqlite', storage: dbPath, logging: false });
 
 const User = sequelize.define('User', {
   name: { type: DataTypes.STRING, allowNull: false }
