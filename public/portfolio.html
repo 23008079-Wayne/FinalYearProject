@@ -319,6 +319,31 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .paypal-btn {
+            background: #0070ba;
+            color: white;
+        }
+
+        .paypal-btn:hover {
+            background: #005ea6;
+        }
     </style>
 </head>
 <body>
@@ -371,7 +396,10 @@
                     <label>Price</label>
                     <input type="text" id="buyPrice" placeholder="$0.00" readonly>
                 </div>
-                <button class="btn btn-primary" onclick="buyStocks()">Buy with Stripe</button>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="buyStocks('stripe')">💳 Buy with Stripe</button>
+                    <button class="btn paypal-btn" onclick="buyStocks('paypal')">🅿️ Buy with PayPal</button>
+                </div>
             </div>
         </div>
 
@@ -403,6 +431,7 @@
     </div>
 
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID_HERE"></script>
     <script>
         const stripe = Stripe('pk_test_YOUR_PUBLIC_KEY_HERE'); // Replace with your Stripe public key
         let portfolio = null;
@@ -418,6 +447,9 @@
             const params = new URLSearchParams(window.location.search);
             if (params.has('session_id')) {
                 handlePaymentReturn();
+            }
+            if (params.has('paypal_order_id')) {
+                handlePayPalReturn();
             }
         });
 
@@ -456,7 +488,7 @@
             }
         }
 
-        async function buyStocks() {
+        async function buyStocks(method = 'stripe') {
             const symbol = document.getElementById('buySymbol').value;
             const shares = parseInt(document.getElementById('buyShares').value);
 
@@ -465,6 +497,14 @@
                 return;
             }
 
+            if (method === 'stripe') {
+                buyWithStripe(symbol, shares);
+            } else if (method === 'paypal') {
+                buyWithPayPal(symbol, shares);
+            }
+        }
+
+        async function buyWithStripe(symbol, shares) {
             try {
                 const response = await fetch('/api/checkout', {
                     method: 'POST',
@@ -492,6 +532,31 @@
             } catch (error) {
                 console.error('Checkout error:', error);
                 showAlert('Error initiating checkout', 'error');
+            }
+        }
+
+        async function buyWithPayPal(symbol, shares) {
+            try {
+                const response = await fetch('/api/paypal/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol,
+                        shares,
+                        userId: 'default_user'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.approvalUrl) {
+                    window.location.href = data.approvalUrl;
+                } else {
+                    showAlert(data.error || 'Error creating PayPal order', 'error');
+                }
+            } catch (error) {
+                console.error('PayPal error:', error);
+                showAlert('Error initiating PayPal payment', 'error');
             }
         }
 
@@ -535,6 +600,45 @@
                 } catch (error) {
                     console.error('Payment processing error:', error);
                     showAlert('Error processing payment', 'error');
+                }
+            }
+        }
+
+        async function handlePayPalReturn() {
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('paypal_order_id');
+
+            if (orderId) {
+                try {
+                    const response = await fetch('/api/paypal/capture-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderId
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showAlert(`✅ ${data.symbol}: Purchased ${data.shares} shares with PayPal!`, 'success');
+                        
+                        // Clear form
+                        document.getElementById('buySymbol').value = '';
+                        document.getElementById('buyShares').value = '';
+                        document.getElementById('buyPrice').value = '';
+                        
+                        // Reload portfolio
+                        await loadPortfolio();
+                        
+                        // Clean URL
+                        window.history.replaceState({}, document.title, '/portfolio.html');
+                    } else {
+                        showAlert(data.error || 'PayPal payment processing failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('PayPal payment processing error:', error);
+                    showAlert('Error processing PayPal payment', 'error');
                 }
             }
         }

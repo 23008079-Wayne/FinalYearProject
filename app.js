@@ -18,6 +18,10 @@ const {
   processPayment,
   sellShares
 } = require("./controllers/paymentController");
+const {
+  createPayPalOrder,
+  capturePayPalPayment
+} = require("./controllers/paypalController");
 const { init: initDatabase } = require("./models");
 
 // Serve static files from the public directory
@@ -54,6 +58,10 @@ app.get("/api/stock-price/:symbol", getStockPrice);   // Get stock price
 app.post("/api/checkout", createCheckoutSession);     // Create Stripe session
 app.post("/api/process-payment", processPayment);     // Process payment & update portfolio
 app.post("/api/sell-shares", sellShares);             // Sell shares
+
+// PayPal endpoints
+app.post("/api/paypal/create-order", createPayPalOrder);     // Create PayPal order
+app.post("/api/paypal/capture-payment", capturePayPalPayment); // Capture PayPal payment
 
 app.get("/analyses/:id", getAnalysis);          // Read one
 app.put("/analyses/:id", updateAnalysis);       // Update
