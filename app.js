@@ -10,6 +10,14 @@ const {
   updateAnalysis, 
   deleteAnalysis 
 } = require("./controllers/sentimentController");
+const {
+  getPortfolio,
+  getTransactions,
+  getStockPrice,
+  createCheckoutSession,
+  processPayment,
+  sellShares
+} = require("./controllers/paymentController");
 const { init: initDatabase } = require("./models");
 
 // Serve static files from the public directory
@@ -35,6 +43,18 @@ app.post("/analyse-sentiment", analyseSentiment);
 // CRUD endpoints for sentiment analyses
 app.post("/analyses/save", saveAnalysis);        // Create
 app.get("/analyses", getAnalyses);              // Read all
+app.get("/analyses/:id", getAnalysis);          // Read one
+app.put("/analyses/:id", updateAnalysis);       // Update
+app.delete("/analyses/:id", deleteAnalysis);    // Delete
+
+// Payment & Portfolio endpoints
+app.get("/api/portfolio", getPortfolio);              // Get portfolio
+app.get("/api/transactions", getTransactions);        // Get transaction history
+app.get("/api/stock-price/:symbol", getStockPrice);   // Get stock price
+app.post("/api/checkout", createCheckoutSession);     // Create Stripe session
+app.post("/api/process-payment", processPayment);     // Process payment & update portfolio
+app.post("/api/sell-shares", sellShares);             // Sell shares
+
 app.get("/analyses/:id", getAnalysis);          // Read one
 app.put("/analyses/:id", updateAnalysis);       // Update
 app.delete("/analyses/:id", deleteAnalysis);    // Delete
