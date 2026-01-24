@@ -13,6 +13,11 @@ let paypalOrders = {};
 // Get PayPal access token
 async function getPayPalAccessToken() {
   try {
+    // Debug: Log to verify credentials are loaded
+    if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET_ID) {
+      throw new Error(`Missing PayPal credentials. CLIENT_ID: ${!!PAYPAL_CLIENT_ID}, SECRET_ID: ${!!PAYPAL_SECRET_ID}`);
+    }
+
     const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET_ID}`).toString('base64');
     
     const response = await axios.post(
@@ -43,22 +48,42 @@ async function createPayPalOrder(req, res) {
 
   const user = userId || 'default_user';
   const stockPrices = {
-    'AAPL': 178.50,
-    'GOOGL': 142.30,
-    'MSFT': 378.20,
-    'TSLA': 248.75,
-    'JNJ': 160.00,
-    'JPM': 195.00
+    'AAPL': 248.50,
+    'GOOGL': 195.75,
+    'MSFT': 445.30,
+    'TSLA': 287.65,
+    'JNJ': 185.20,
+    'JPM': 225.40
   };
 
-  const price = stockPrices[symbol];
-  if (!price) {
-    return res.status(404).json({ error: "Stock not found" });
-  }
-
-  const amount = (price * shares).toFixed(2);
-
   try {
+    // Try to get live price first, fall back to hardcoded if fails
+    let price = null;
+    const finnhubKey = process.env.FINNHUB_API_KEY;
+    
+    try {
+      const quoteResponse = await axios.get(`https://finnhub.io/api/v1/quote`, {
+        params: { 
+          symbol: symbol.toUpperCase(),
+          token: finnhubKey
+        },
+        timeout: 5000
+      });
+
+      if (quoteResponse.data.c && quoteResponse.data.c > 0) {
+        price = quoteResponse.data.c;
+      }
+    } catch (error) {
+      // Fall back to hardcoded prices
+      price = stockPrices[symbol];
+    }
+
+    if (!price) {
+      return res.status(404).json({ error: "Stock not found" });
+    }
+
+    const amount = (price * shares).toFixed(2);
+
     const accessToken = await getPayPalAccessToken();
 
     const orderData = {

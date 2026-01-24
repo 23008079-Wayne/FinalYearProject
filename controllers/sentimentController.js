@@ -22,28 +22,28 @@ function analyseSentiment(req, res) {
   // Use the venv Python interpreter
   const pythonScript = path.join(__dirname, "../nlp/analyse.py");
   const venvPython = path.join(__dirname, "../venv/Scripts/python.exe");
-  
-  console.log("🔍 Sentiment Analysis Request:");
+
+  console.log("≡ƒöì Sentiment Analysis Request:");
   console.log("   URL:", url);
   console.log("   Python Path:", venvPython);
   console.log("   Script Path:", pythonScript);
-  
+
   exec(`"${venvPython}" "${pythonScript}" "${url}"`, (error, stdout, stderr) => {
-    console.log("📤 Python Output:", stdout);
-    if (stderr) console.error("⚠️ Python Stderr:", stderr);
-    if (error) console.error("❌ Exec Error:", error);
-    
+    console.log("≡ƒôñ Python Output:", stdout);
+    if (stderr) console.error("ΓÜá∩╕Å Python Stderr:", stderr);
+    if (error) console.error("Γ¥î Exec Error:", error);
+
     if (error) {
-      return res.json({ sentiment: "N/A", confidence: 0, summary: "Error: " + stderr });
+      return res.json({ sentiment: "N/A", confidence: 0, summary: "Error: " + stderr });    
     }
-    
+
     try {
       const result = JSON.parse(stdout);
-      console.log("✅ Sentiment Result:", result);
+      console.log("Γ£à Sentiment Result:", result);
       res.json(result);
     } catch (e) {
       console.error('Parse Error:', e.message);
-      res.json({ sentiment: "N/A", confidence: 0, summary: "Parse error: " + e.message });
+      res.json({ sentiment: "N/A", confidence: 0, summary: "Parse error: " + e.message });  
     }
   });
 }
@@ -59,7 +59,7 @@ async function saveAnalysis(req, res) {
   try {
     // Get the default dev_user
     const user = await User.findOne({ where: { name: 'dev_user' } });
-    
+
     const analysis = await SentimentAnalysis.create({
       url,
       title: title || 'Untitled Article',
@@ -72,8 +72,8 @@ async function saveAnalysis(req, res) {
       UserId: user.id
     });
 
-    console.log("💾 Analysis saved:", analysis.id);
-    res.json({ success: true, id: analysis.id, message: "Analysis saved successfully" });
+    console.log("≡ƒÆ╛ Analysis saved:", analysis.id);
+    res.json({ success: true, id: analysis.id, message: "Analysis saved successfully" });   
   } catch (error) {
     console.error('Save error:', error);
     res.status(500).json({ error: "Error saving analysis: " + error.message });
@@ -123,11 +123,11 @@ async function updateAnalysis(req, res) {
 
     if (notes !== undefined) analysis.notes = notes;
     if (isFavorite !== undefined) analysis.isFavorite = isFavorite;
-    
+
     await analysis.save();
 
-    console.log("✏️ Analysis updated:", id);
-    res.json({ success: true, message: "Analysis updated successfully", analysis });
+    console.log("Γ£Å∩╕Å Analysis updated:", id);
+    res.json({ success: true, message: "Analysis updated successfully", analysis });        
   } catch (error) {
     console.error('Update error:', error);
     res.status(500).json({ error: "Error updating analysis" });
@@ -145,7 +145,7 @@ async function deleteAnalysis(req, res) {
     }
 
     await analysis.destroy();
-    console.log("🗑️ Analysis deleted:", id);
+    console.log("≡ƒùæ∩╕Å Analysis deleted:", id);
     res.json({ success: true, message: "Analysis deleted successfully" });
   } catch (error) {
     console.error('Delete error:', error);

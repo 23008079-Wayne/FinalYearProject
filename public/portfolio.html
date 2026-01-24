@@ -344,6 +344,193 @@
         .paypal-btn:hover {
             background: #005ea6;
         }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: #f5f5f5;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-symbol {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-price {
+            font-size: 0.9rem;
+            color: #667eea;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .payment-modal {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .receipt-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .receipt-row:last-child {
+            border-bottom: none;
+        }
+
+        .receipt-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .receipt-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .receipt-row.total {
+            background: white;
+            padding: 15px;
+            margin: 0 -20px -20px -20px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .receipt-row.total .receipt-label,
+        .receipt-row.total .receipt-value {
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+
+        .payment-methods {
+            margin-bottom: 30px;
+        }
+
+        .payment-methods h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .method-buttons {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .method-btn {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .method-btn:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+
+        .method-btn.active {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+
+        .method-btn input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -353,6 +540,18 @@
             <div class="header-links">
                 <a href="index.html">← Back to Dashboard</a>
                 <a href="#" onclick="location.reload()">🔄 Refresh</a>
+                <select id="currencySelector" onchange="changeCurrency()" style="padding: 8px 12px; border-radius: 6px; border: 2px solid #667eea; background: white; cursor: pointer; font-weight: 600; color: #333;">
+                    <option value="USD">💵 USD (US Dollar)</option>
+                    <option value="EUR">€ EUR (Euro)</option>
+                    <option value="GBP">£ GBP (British Pound)</option>
+                    <option value="JPY">¥ JPY (Japanese Yen)</option>
+                    <option value="CAD">🇨🇦 CAD (Canadian Dollar)</option>
+                    <option value="AUD">🇦🇺 AUD (Australian Dollar)</option>
+                    <option value="CHF">🇨🇭 CHF (Swiss Franc)</option>
+                    <option value="CNY">¥ CNY (Chinese Yuan)</option>
+                    <option value="INR">₹ INR (Indian Rupee)</option>
+                    <option value="MXN">$ MXN (Mexican Peso)</option>
+                </select>
             </div>
         </header>
 
@@ -377,29 +576,23 @@
             <h2>Buy Stocks</h2>
             <div class="action-form">
                 <div class="form-group">
-                    <label>Symbol</label>
-                    <select id="buySymbol">
-                        <option value="">Select Stock</option>
-                        <option value="AAPL">AAPL</option>
-                        <option value="GOOGL">GOOGL</option>
-                        <option value="MSFT">MSFT</option>
-                        <option value="TSLA">TSLA</option>
-                        <option value="JNJ">JNJ</option>
-                        <option value="JPM">JPM</option>
-                    </select>
+                    <label>Stock Search</label>
+                    <input type="text" id="stockSearch" placeholder="Search by symbol or name (e.g., AAPL, Apple)" autocomplete="off">
+                    <div id="searchResults" class="search-results" style="display: none;"></div>
                 </div>
                 <div class="form-group">
                     <label>Shares</label>
                     <input type="number" id="buyShares" placeholder="10" min="1">
                 </div>
                 <div class="form-group">
-                    <label>Price</label>
+                    <label>Price (Live)</label>
                     <input type="text" id="buyPrice" placeholder="$0.00" readonly>
                 </div>
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="buyStocks('stripe')">💳 Buy with Stripe</button>
-                    <button class="btn paypal-btn" onclick="buyStocks('paypal')">🅿️ Buy with PayPal</button>
+                <div class="form-group">
+                    <label>Total Cost</label>
+                    <input type="text" id="totalCost" placeholder="$0.00" readonly>
                 </div>
+                <button class="btn btn-primary" onclick="proceedToPayment()" style="padding: 12px 32px;">Proceed to Payment</button>
             </div>
         </div>
 
@@ -430,18 +623,147 @@
         </div>
     </div>
 
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="payment-modal">
+            <div class="modal-header">
+                <h2>Confirm Payment</h2>
+                <button class="close-btn" onclick="closePaymentModal()">&times;</button>
+            </div>
+
+            <div class="receipt-section">
+                <h3 style="margin-bottom: 15px; color: #333;">Order Summary</h3>
+                <div class="receipt-row">
+                    <span class="receipt-label">Stock</span>
+                    <span class="receipt-value" id="receiptSymbol">-</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Shares</span>
+                    <span class="receipt-value" id="receiptShares">-</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Price per Share</span>
+                    <span class="receipt-value" id="receiptPrice">-</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Subtotal</span>
+                    <span class="receipt-value" id="receiptSubtotal">-</span>
+                </div>
+                <div class="receipt-row total">
+                    <span class="receipt-label">Total Cost</span>
+                    <span class="receipt-value" id="receiptTotal">-</span>
+                </div>
+            </div>
+
+            <div class="payment-methods">
+                <h3>Select Payment Method</h3>
+                <div class="method-buttons">
+                    <label class="method-btn">
+                        <input type="radio" name="paymentMethod" value="stripe" checked onchange="updateSelectedMethod('stripe')">
+                        💳 Credit Card (Stripe)
+                    </label>
+                    <label class="method-btn">
+                        <input type="radio" name="paymentMethod" value="paypal" onchange="updateSelectedMethod('paypal')">
+                        🅿️ PayPal
+                    </label>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+                <button class="btn btn-primary" id="confirmPaymentBtn" onclick="confirmPayment()">Complete Payment</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://js.stripe.com/v3/"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID_HERE"></script>
     <script>
-        const stripe = Stripe('pk_test_YOUR_PUBLIC_KEY_HERE'); // Replace with your Stripe public key
+        const stripe = Stripe('pk_test_YOUR_PUBLIC_KEY_HERE');
         let portfolio = null;
+        let selectedPaymentMethod = 'stripe';
+        let currentPurchase = {
+            symbol: '',
+            shares: 0,
+            price: 0,
+            total: 0
+        };
+
+        // Stock price cache to reduce API calls
+        const stockCache = {};
+        const CACHE_DURATION = 60000; // Cache for 60 seconds
+
+        // Currency conversion
+        let currentCurrency = localStorage.getItem('selectedCurrency') || 'USD';
+        let exchangeRates = {};
+        const CURRENCY_SYMBOLS = {
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'JPY': '¥',
+            'CAD': 'C$',
+            'AUD': 'A$',
+            'CHF': 'CHF',
+            'CNY': '¥',
+            'INR': '₹',
+            'MXN': '$'
+        };
+
+        // Fetch exchange rates on page load
+        async function loadExchangeRates() {
+            try {
+                const response = await fetch('/api/exchange-rates');
+                const data = await response.json();
+                exchangeRates = data.rates;
+                localStorage.setItem('exchangeRates', JSON.stringify(data.rates));
+                localStorage.setItem('exchangeRatesTimestamp', Date.now());
+            } catch (error) {
+                console.error('Error loading exchange rates:', error);
+                // Use cached rates if available
+                const cached = localStorage.getItem('exchangeRates');
+                if (cached) {
+                    exchangeRates = JSON.parse(cached);
+                }
+            }
+        }
+
+        // Convert USD amount to selected currency
+        function convertPrice(usdAmount) {
+            if (!exchangeRates[currentCurrency]) {
+                return usdAmount;
+            }
+            return (usdAmount * exchangeRates[currentCurrency]).toFixed(2);
+        }
+
+        // Format currency display
+        function formatCurrency(amount) {
+            const symbol = CURRENCY_SYMBOLS[currentCurrency] || '$';
+            const converted = convertPrice(amount);
+            return `${symbol}${converted}`;
+        }
+
+        // Change currency and update display
+        function changeCurrency() {
+            const selector = document.getElementById('currencySelector');
+            currentCurrency = selector.value;
+            localStorage.setItem('selectedCurrency', currentCurrency);
+            updateCurrencyDisplay();
+        }
+
+        // Update all currency displays on page
+        function updateCurrencyDisplay() {
+            // Update selector to match current currency
+            document.getElementById('currencySelector').value = currentCurrency;
+            
+            // Reload portfolio to update all prices
+            loadPortfolio();
+        }
 
         // Load portfolio on page load
         document.addEventListener('DOMContentLoaded', () => {
+            loadExchangeRates();
             loadPortfolio();
-            
-            // Update stock price when symbol is selected
-            document.getElementById('buySymbol').addEventListener('change', updateStockPrice);
+            setupEventListeners();
 
             // Check for payment success on page load
             const params = new URLSearchParams(window.location.search);
@@ -453,54 +775,240 @@
             }
         });
 
+        function setupEventListeners() {
+            const stockSearch = document.getElementById('stockSearch');
+            const buyShares = document.getElementById('buyShares');
+
+            let searchTimeout;
+            stockSearch.addEventListener('input', async (e) => {
+                const query = e.target.value.trim();
+                
+                // Clear previous timeout
+                clearTimeout(searchTimeout);
+                
+                if (query.length === 0) {
+                    document.getElementById('searchResults').style.display = 'none';
+                    return;
+                }
+
+                // Add slight delay to avoid too many API calls while user is typing
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/search-stocks?query=${encodeURIComponent(query)}`);
+                        const data = await response.json();
+                        const resultsDiv = document.getElementById('searchResults');
+                        
+                        if (data.results && data.results.length > 0) {
+                            displaySearchResults(data.results);
+                        } else {
+                            resultsDiv.innerHTML = '<div class="search-result-item">No stocks found. Try another search.</div>';
+                            resultsDiv.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.error('Error fetching stocks:', error);
+                        const resultsDiv = document.getElementById('searchResults');
+                        resultsDiv.innerHTML = '<div class="search-result-item">Error searching stocks. Please try again.</div>';
+                        resultsDiv.style.display = 'block';
+                    }
+                }, 500); // 500ms delay to reduce API calls
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.form-group')) {
+                    document.getElementById('searchResults').style.display = 'none';
+                }
+            });
+
+            // Update total cost when shares change
+            buyShares.addEventListener('input', updateTotalCost);
+        }
+
+        function displaySearchResults(results) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="search-result-item">No stocks found</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+
+            resultsDiv.innerHTML = results.map(stock => {
+                const price = typeof stock.price === 'number' ? stock.price : (stock.price === 'N/A' ? '---' : stock.price);
+                const priceDisplay = price === 'Loading...' || price === '---' ? price : formatCurrency(parseFloat(price));
+                return `
+                    <div class="search-result-item" onclick="selectStock('${stock.symbol}', ${typeof stock.price === 'number' ? stock.price : 0})">
+                        <div>
+                            <div class="result-symbol">${stock.symbol}</div>
+                            <div style="font-size: 0.85rem; color: #666;">${stock.name}</div>
+                        </div>
+                        <div class="result-price">${priceDisplay}</div>
+                    </div>
+                `;
+            }).join('');
+            resultsDiv.style.display = 'block';
+        }
+
+        function selectStock(symbol, price) {
+            document.getElementById('stockSearch').value = symbol;
+            document.getElementById('searchResults').style.display = 'none';
+            
+            // If price is provided from search results, use it; otherwise fetch live price
+            if (price && price !== 'N/A') {
+                document.getElementById('buyPrice').value = formatCurrency(parseFloat(price));
+                updateTotalCost();
+            } else {
+                // Fetch current live price
+                updateLivePrice(symbol);
+            }
+        }
+
+        async function updateLivePrice(symbol) {
+            try {
+                // Check cache first
+                const now = Date.now();
+                if (stockCache[symbol] && (now - stockCache[symbol].timestamp) < CACHE_DURATION) {
+                    document.getElementById('buyPrice').value = `$${stockCache[symbol].price.toFixed(2)}`;
+                    updateTotalCost();
+                    return;
+                }
+
+                const response = await fetch(`/api/live-price/${symbol}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // Cache the price
+                    stockCache[symbol] = {
+                        price: data.price,
+                        timestamp: now
+                    };
+                    document.getElementById('buyPrice').value = formatCurrency(data.price);
+                    updateTotalCost();
+                } else {
+                    showAlert('Unable to fetch current price for this stock', 'error');
+                }
+            } catch (error) {
+                console.error('Error fetching live price:', error);
+                showAlert('Error fetching stock price. Please try again.', 'error');
+            }
+        }
+
+        function updateTotalCost() {
+            const priceText = document.getElementById('buyPrice').value;
+            const shares = parseInt(document.getElementById('buyShares').value) || 0;
+            
+            // Extract numeric value from currency-formatted string
+            const priceMatch = priceText.replace(/[^\d.-]/g, '');
+            const price = parseFloat(priceMatch) || 0;
+            const total = price * shares;
+
+            document.getElementById('totalCost').value = formatCurrency(total);
+        }
+
         async function loadPortfolio() {
             try {
                 const response = await fetch('/api/portfolio?userId=default_user');
                 const data = await response.json();
                 portfolio = data;
 
-                // Update overview cards
-                document.getElementById('cashValue').textContent = `$${data.cash.toFixed(2)}`;
-                document.getElementById('portfolioValue').textContent = `$${data.portfolioValue.toFixed(2)}`;
-                document.getElementById('totalValue').textContent = `$${data.totalValue.toFixed(2)}`;
+                document.getElementById('cashValue').textContent = formatCurrency(data.cash);
+                document.getElementById('portfolioValue').textContent = formatCurrency(data.portfolioValue);
+                document.getElementById('totalValue').textContent = formatCurrency(data.totalValue);
 
-                // Update holdings table
                 renderHoldings(data.holdings);
-
-                // Update transactions
                 renderTransactions(data.transactions);
+
+                // Update prices live every 5 seconds
+                setInterval(updateLivePrices, 5000);
             } catch (error) {
                 console.error('Error loading portfolio:', error);
                 showAlert('Error loading portfolio', 'error');
             }
         }
 
-        async function updateStockPrice() {
-            const symbol = document.getElementById('buySymbol').value;
+        async function updateLivePrices() {
+            const symbol = document.getElementById('stockSearch').value;
             if (!symbol) return;
 
             try {
-                const response = await fetch(`/api/stock-price/${symbol}`);
-                const data = await response.json();
-                document.getElementById('buyPrice').value = `$${data.price.toFixed(2)}`;
+                // Check cache first
+                const now = Date.now();
+                if (stockCache[symbol] && (now - stockCache[symbol].timestamp) < CACHE_DURATION) {
+                    document.getElementById('buyPrice').value = `$${stockCache[symbol].price.toFixed(2)}`;
+                    updateTotalCost();
+                    return;
+                }
+
+                const response = await fetch(`/api/live-price/${symbol}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // Cache the price
+                    stockCache[symbol] = {
+                        price: data.price,
+                        timestamp: now
+                    };
+                    document.getElementById('buyPrice').value = `$${data.price.toFixed(2)}`;
+                    updateTotalCost();
+                }
             } catch (error) {
                 console.error('Error fetching stock price:', error);
             }
         }
 
-        async function buyStocks(method = 'stripe') {
-            const symbol = document.getElementById('buySymbol').value;
+        function proceedToPayment() {
+            const symbol = document.getElementById('stockSearch').value;
             const shares = parseInt(document.getElementById('buyShares').value);
+            const priceText = document.getElementById('buyPrice').value;
+            const price = parseFloat(priceText.replace('$', ''));
 
             if (!symbol || !shares || shares <= 0) {
                 showAlert('Please select a stock and enter shares', 'error');
                 return;
             }
 
-            if (method === 'stripe') {
-                buyWithStripe(symbol, shares);
-            } else if (method === 'paypal') {
-                buyWithPayPal(symbol, shares);
+            if (price <= 0) {
+                showAlert('Invalid stock price', 'error');
+                return;
+            }
+
+            const totalCost = price * shares;
+
+            if (portfolio.cash < totalCost) {
+                showAlert(`Insufficient funds! You need $${totalCost.toFixed(2)} but only have $${portfolio.cash.toFixed(2)}`, 'error');
+                return;
+            }
+
+            // Set current purchase details
+            currentPurchase = {
+                symbol,
+                shares,
+                price,
+                total: totalCost
+            };
+
+            // Update receipt
+            document.getElementById('receiptSymbol').textContent = symbol;
+            document.getElementById('receiptShares').textContent = shares;
+            document.getElementById('receiptPrice').textContent = formatCurrency(price);
+            document.getElementById('receiptSubtotal').textContent = formatCurrency(totalCost);
+            document.getElementById('receiptTotal').textContent = formatCurrency(totalCost);
+
+            // Show payment modal
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+        }
+
+        function updateSelectedMethod(method) {
+            selectedPaymentMethod = method;
+        }
+
+        async function confirmPayment() {
+            if (selectedPaymentMethod === 'stripe') {
+                await buyWithStripe(currentPurchase.symbol, currentPurchase.shares);
+            } else if (selectedPaymentMethod === 'paypal') {
+                await buyWithPayPal(currentPurchase.symbol, currentPurchase.shares);
             }
         }
 
@@ -519,6 +1027,7 @@
                 const data = await response.json();
                 
                 if (data.sessionId) {
+                    closePaymentModal();
                     const result = await stripe.redirectToCheckout({
                         sessionId: data.sessionId
                     });
@@ -550,6 +1059,7 @@
                 const data = await response.json();
                 
                 if (data.approvalUrl) {
+                    closePaymentModal();
                     window.location.href = data.approvalUrl;
                 } else {
                     showAlert(data.error || 'Error creating PayPal order', 'error');
@@ -584,15 +1094,12 @@
                     if (data.success) {
                         showAlert(`✅ ${data.message}`, 'success');
                         
-                        // Clear form
-                        document.getElementById('buySymbol').value = '';
+                        document.getElementById('stockSearch').value = '';
                         document.getElementById('buyShares').value = '';
                         document.getElementById('buyPrice').value = '';
+                        document.getElementById('totalCost').value = '';
                         
-                        // Reload portfolio
                         await loadPortfolio();
-                        
-                        // Clean URL
                         window.history.replaceState({}, document.title, '/portfolio.html');
                     } else {
                         showAlert(data.error || 'Payment processing failed', 'error');
@@ -623,15 +1130,12 @@
                     if (data.success) {
                         showAlert(`✅ ${data.symbol}: Purchased ${data.shares} shares with PayPal!`, 'success');
                         
-                        // Clear form
-                        document.getElementById('buySymbol').value = '';
+                        document.getElementById('stockSearch').value = '';
                         document.getElementById('buyShares').value = '';
                         document.getElementById('buyPrice').value = '';
+                        document.getElementById('totalCost').value = '';
                         
-                        // Reload portfolio
                         await loadPortfolio();
-                        
-                        // Clean URL
                         window.history.replaceState({}, document.title, '/portfolio.html');
                     } else {
                         showAlert(data.error || 'PayPal payment processing failed', 'error');
@@ -684,9 +1188,9 @@
                 <tr>
                     <td class="symbol-cell">${symbol}</td>
                     <td>${holding.shares}</td>
-                    <td>$${holding.avgCost.toFixed(2)}</td>
-                    <td>$${holding.currentPrice.toFixed(2)}</td>
-                    <td class="value-cell">$${holding.value.toFixed(2)}</td>
+                    <td>${formatCurrency(holding.avgCost)}</td>
+                    <td>${formatCurrency(holding.currentPrice)}</td>
+                    <td class="value-cell">${formatCurrency(holding.value)}</td>
                     <td><button class="btn btn-danger" onclick="sellShares('${symbol}')" style="padding: 8px 16px; font-size: 0.9rem;">Sell</button></td>
                 </tr>
             `).join('');
@@ -708,9 +1212,9 @@
                     </div>
                     <div class="transaction-type ${tx.type}">${tx.type.toUpperCase()}</div>
                     <div class="transaction-info">
-                        <div class="transaction-symbol">${tx.shares} shares @ $${tx.price.toFixed(2)}</div>
+                        <div class="transaction-symbol">${tx.shares} shares @ ${formatCurrency(tx.price)}</div>
                     </div>
-                    <div class="transaction-amount">$${tx.total.toFixed(2)}</div>
+                    <div class="transaction-amount">${formatCurrency(tx.total)}</div>
                 </div>
             `).join('');
         }

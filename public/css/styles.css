@@ -764,6 +764,31 @@ footer {
     white-space: nowrap;
 }
 
+/* Ticker Autocomplete Dropdown */
+#tickerAutocomplete {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#tickerAutocomplete > div {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+#tickerAutocomplete > div:last-child {
+    border-bottom: none;
+}
+
+#tickerAutocomplete > div:hover {
+    background-color: #f5f5f5;
+}
+
+#tickerAutocomplete strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
 /* News Articles Grid */
 .news-articles-grid {
     display: grid;
@@ -918,6 +943,108 @@ footer {
 /* Animation for analysis results */
 .analysis-result {
     animation: slideIn 0.3s ease;
+}
+
+/* Saved Analyses Cards */
+.saved-analysis-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.saved-analysis-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.analysis-url {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.analysis-date {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.sentiment-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.sentiment-positive {
+    background: #D4EDDA;
+    color: #155724;
+}
+
+.sentiment-negative {
+    background: #F8D7DA;
+    color: #721C24;
+}
+
+.sentiment-neutral {
+    background: #E2E3E5;
+    color: #383D41;
+}
+
+.analysis-confidence {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    color: #666;
+}
+
+.analysis-summary {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+.analysis-notes-section {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.notes-display {
+    margin-top: 8px;
+    color: #555;
+    font-style: italic;
+}
+
+.notes-editor {
+    margin-top: 8px;
+}
+
+.analysis-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+.favorite-btn {
+    font-size: 1.3rem;
+    cursor: pointer;
 }
 
 @keyframes slideIn {

@@ -2,12 +2,12 @@
 
 // Mock stock data
 const mockStocks = {
-    'AAPL': { symbol: 'AAPL', name: 'Apple Inc.', price: 178.50, change: 2.5 },
-    'GOOGL': { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 142.30, change: -1.2 },
-    'MSFT': { symbol: 'MSFT', name: 'Microsoft Corp.', price: 378.20, change: 3.1 },
-    'TSLA': { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.75, change: -2.8 },
-    'JNJ': { symbol: 'JNJ', name: 'Johnson & Johnson', price: 160.00, change: 0.8 },
-    'JPM': { symbol: 'JPM', name: 'JPMorgan Chase', price: 195.00, change: 1.5 }
+    'AAPL': { symbol: 'AAPL', name: 'Apple Inc.', price: 248.50, change: 2.5 },
+    'GOOGL': { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 195.75, change: -1.2 },
+    'MSFT': { symbol: 'MSFT', name: 'Microsoft Corp.', price: 445.30, change: 3.1 },
+    'TSLA': { symbol: 'TSLA', name: 'Tesla Inc.', price: 287.65, change: -2.8 },
+    'JNJ': { symbol: 'JNJ', name: 'Johnson & Johnson', price: 185.20, change: 0.8 },
+    'JPM': { symbol: 'JPM', name: 'JPMorgan Chase', price: 225.40, change: 1.5 }
 };
 
 // Top 5 News Articles for Sentiment Analysis
@@ -383,6 +383,70 @@ function filterInsightsBySentiment(insights, sentiment) {
 
 // ===== NEWS ARTICLES FUNCTIONS =====
 
+// Common stocks for autocomplete
+const commonStocks = [
+  { symbol: 'AAPL', name: 'Apple Inc.' },
+  { symbol: 'MSFT', name: 'Microsoft Corporation' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
+  { symbol: 'TSLA', name: 'Tesla Inc.' },
+  { symbol: 'META', name: 'Meta Platforms Inc.' },
+  { symbol: 'JPM', name: 'JPMorgan Chase' },
+  { symbol: 'V', name: 'Visa Inc.' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson' },
+  { symbol: 'WMT', name: 'Walmart Inc.' },
+  { symbol: 'PG', name: 'Procter & Gamble' },
+  { symbol: 'MCD', name: "McDonald's Corporation" },
+  { symbol: 'DIS', name: 'The Walt Disney Company' },
+  { symbol: 'NFLX', name: 'Netflix Inc.' },
+  { symbol: 'SPOT', name: 'Spotify Technology' },
+  { symbol: 'AMD', name: 'Advanced Micro Devices' },
+  { symbol: 'INTC', name: 'Intel Corporation' },
+  { symbol: 'QCOM', name: 'Qualcomm Inc.' },
+  { symbol: 'F', name: 'Ford Motor Company' }
+];
+
+// Handle ticker search autocomplete
+function handleTickerSearch() {
+    const input = document.getElementById('tickerSearch');
+    const autocompleteDiv = document.getElementById('tickerAutocomplete');
+    const query = input.value.trim().toUpperCase();
+    
+    if (!query || query.length < 1) {
+        autocompleteDiv.style.display = 'none';
+        return;
+    }
+    
+    // Filter stocks matching the query
+    const matches = commonStocks.filter(stock => 
+        stock.symbol.startsWith(query) || stock.name.toUpperCase().includes(query)
+    ).slice(0, 8);
+    
+    if (matches.length === 0) {
+        autocompleteDiv.style.display = 'none';
+        return;
+    }
+    
+    // Display autocomplete suggestions
+    autocompleteDiv.innerHTML = matches.map(stock => `
+        <div style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee; hover: background: #f5f5f5;" 
+             onmouseover="this.style.background='#f5f5f5'" 
+             onmouseout="this.style.background='white'"
+             onclick="selectTickerSuggestion('${stock.symbol}')">
+            <strong>${stock.symbol}</strong> - ${stock.name}
+        </div>
+    `).join('');
+    
+    autocompleteDiv.style.display = 'block';
+}
+
+// Select a ticker from autocomplete suggestions
+function selectTickerSuggestion(symbol) {
+    document.getElementById('tickerSearch').value = symbol;
+    document.getElementById('tickerAutocomplete').style.display = 'none';
+}
+
 async function searchNewsByTicker() {
     const ticker = document.getElementById('tickerSearch').value.trim().toUpperCase();
     
@@ -712,14 +776,20 @@ function initNavbar() {
     
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = link.getAttribute('href').substring(1);
-            const targetSection = document.getElementById(targetId);
+            const href = link.getAttribute('href');
             
-            if (targetSection) {
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setTimeout(updateActiveNavLink, 100);
+            // Only prevent default for hash links (internal sections)
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                const targetId = href.substring(1);
+                const targetSection = document.getElementById(targetId);
+                
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(updateActiveNavLink, 100);
+                }
             }
+            // Allow external links like portfolio.html to navigate normally
         });
     });
     

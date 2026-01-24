@@ -11,12 +11,12 @@ let userPortfolio = {
 
 // Mock stock prices (in real app, fetch from API)
 const stockPrices = {
-  'AAPL': 178.50,
-  'GOOGL': 142.30,
-  'MSFT': 378.20,
-  'TSLA': 248.75,
-  'JNJ': 160.00,
-  'JPM': 195.00
+  'AAPL': 248.50,
+  'GOOGL': 195.75,
+  'MSFT': 445.30,
+  'TSLA': 287.65,
+  'JNJ': 185.20,
+  'JPM': 225.40
 };
 
 // Get user portfolio
@@ -83,6 +83,171 @@ function getStockPrice(req, res) {
   });
 }
 
+// Get live stock price from Finnhub API with API key
+async function getLiveStockPrice(req, res) {
+  const { symbol } = req.params;
+  
+  if (!symbol) {
+    return res.status(400).json({ error: "Symbol is required" });
+  }
+
+  try {
+    const axios = require('axios');
+    const symbol_upper = symbol.toUpperCase();
+    const finnhubKey = process.env.FINNHUB_API_KEY;
+    
+    if (!finnhubKey) {
+      console.warn('⚠️  FINNHUB_API_KEY not set in .env file');
+    }
+    
+    // Use Finnhub API with API key
+    try {
+      const response = await axios.get(`https://finnhub.io/api/v1/quote`, {
+        params: {
+          symbol: symbol_upper,
+          token: finnhubKey
+        },
+        timeout: 5000
+      });
+      
+      if (response.data?.c && response.data.c > 0) {
+        return res.json({
+          symbol: symbol_upper,
+          price: response.data.c,
+          name: symbol_upper,
+          currency: 'USD',
+          timestamp: new Date().toISOString(),
+          source: 'finnhub'
+        });
+      }
+    } catch (finnhubError) {
+      console.error(`Finnhub API error for ${symbol_upper}:`, finnhubError.message);
+    }
+    
+    // Fallback to hardcoded price if available
+    if (stockPrices[symbol_upper]) {
+      return res.json({
+        symbol: symbol_upper,
+        price: stockPrices[symbol_upper],
+        name: symbol_upper,
+        currency: 'USD',
+        timestamp: new Date().toISOString(),
+        source: 'cached'
+      });
+    }
+    
+    res.status(404).json({ error: "Stock not found", symbol: symbol_upper });
+  } catch (error) {
+    const errorMessage = error.message || error.toString();
+    console.error(`Error fetching live price for ${symbol}:`, errorMessage);
+    
+    // Final fallback: return cached price if available
+    if (stockPrices[symbol.toUpperCase()]) {
+      return res.json({
+        symbol: symbol.toUpperCase(),
+        price: stockPrices[symbol.toUpperCase()],
+        currency: 'USD',
+        timestamp: new Date().toISOString(),
+        source: 'cached'
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Unable to fetch stock price. Using cached price if available.",
+      symbol: symbol
+    });
+  }
+}
+
+// Comprehensive list of common stocks for autocomplete
+const commonStocks = [
+  { symbol: 'AAPL', name: 'Apple Inc.' },
+  { symbol: 'MSFT', name: 'Microsoft Corporation' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
+  { symbol: 'TSLA', name: 'Tesla Inc.' },
+  { symbol: 'META', name: 'Meta Platforms Inc.' },
+  { symbol: 'JPM', name: 'JPMorgan Chase' },
+  { symbol: 'V', name: 'Visa Inc.' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson' },
+  { symbol: 'WMT', name: 'Walmart Inc.' },
+  { symbol: 'PG', name: 'Procter & Gamble' },
+  { symbol: 'MCD', name: 'McDonald\'s Corporation' },
+  { symbol: 'DIS', name: 'The Walt Disney Company' },
+  { symbol: 'NFLX', name: 'Netflix Inc.' },
+  { symbol: 'SPOT', name: 'Spotify Technology' },
+  { symbol: 'AMD', name: 'Advanced Micro Devices' },
+  { symbol: 'INTC', name: 'Intel Corporation' },
+  { symbol: 'QCOM', name: 'Qualcomm Inc.' },
+  { symbol: 'F', name: 'Ford Motor Company' },
+  { symbol: 'GM', name: 'General Motors' },
+  { symbol: 'UBER', name: 'Uber Technologies' },
+  { symbol: 'LYFT', name: 'Lyft Inc.' },
+  { symbol: 'COIN', name: 'Coinbase Global' }
+];
+
+// Search for stocks by query (symbol or name)
+async function searchStocks(req, res) {
+  const { query } = req.query;
+  
+  if (!query || query.length < 1) {
+    return res.json({ results: commonStocks.slice(0, 10) });
+  }
+
+  try {
+    const axios = require('axios');
+    const query_upper = query.toUpperCase();
+    const finnhubKey = process.env.FINNHUB_API_KEY;
+    
+    // Filter common stocks first (instant autocomplete)
+    const autocompleteResults = commonStocks
+      .filter(stock => 
+        stock.symbol.startsWith(query_upper) || 
+        stock.name.toUpperCase().includes(query_upper)
+      )
+      .slice(0, 8);
+    
+    // Try to get prices for results using Finnhub
+    const resultsWithPrices = await Promise.all(
+      autocompleteResults.map(async (stock) => {
+        try {
+          const priceResponse = await axios.get(`https://finnhub.io/api/v1/quote`, {
+            params: { 
+              symbol: stock.symbol,
+              token: finnhubKey
+            },
+            timeout: 3000
+          });
+          
+          const price = priceResponse.data?.c || stockPrices[stock.symbol] || 'Loading...';
+          return {
+            symbol: stock.symbol,
+            name: stock.name,
+            price: price
+          };
+        } catch (err) {
+          return {
+            symbol: stock.symbol,
+            name: stock.name,
+            price: stockPrices[stock.symbol] || 'N/A'
+          };
+        }
+      })
+    );
+    
+    res.json({ results: resultsWithPrices });
+  } catch (error) {
+    console.error(`Error in searchStocks:`, error.message);
+    // Return common stocks on error
+    const filtered = commonStocks
+      .filter(s => s.symbol.includes(query.toUpperCase()) || s.name.toUpperCase().includes(query.toUpperCase()))
+      .slice(0, 8);
+    
+    res.json({ results: filtered.length > 0 ? filtered : commonStocks.slice(0, 5) });
+  }
+}
+
 // Create checkout session for buying stock
 async function createCheckoutSession(req, res) {
   const { symbol, shares, userId } = req.body;
@@ -101,14 +266,35 @@ async function createCheckoutSession(req, res) {
     };
   }
 
-  const price = stockPrices[symbol];
-  if (!price) {
-    return res.status(404).json({ error: "Stock not found" });
-  }
-
-  const totalPrice = price * shares * 100; // Stripe uses cents
-
   try {
+    // Try to get live price first, fall back to hardcoded if fails
+    let price = null;
+    const finnhubKey = process.env.FINNHUB_API_KEY;
+    
+    try {
+      const axios = require('axios');
+      const quoteResponse = await axios.get(`https://finnhub.io/api/v1/quote`, {
+        params: { 
+          symbol: symbol.toUpperCase(),
+          token: finnhubKey
+        },
+        timeout: 5000
+      });
+
+      if (quoteResponse.data.c && quoteResponse.data.c > 0) {
+        price = quoteResponse.data.c;
+      }
+    } catch (error) {
+      // Fall back to hardcoded prices
+      price = stockPrices[symbol];
+    }
+
+    if (!price) {
+      return res.status(404).json({ error: "Stock not found" });
+    }
+
+    const totalPrice = price * shares * 100; // Stripe uses cents
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -277,6 +463,8 @@ module.exports = {
   getPortfolio,
   getTransactions,
   getStockPrice,
+  getLiveStockPrice,
+  searchStocks,
   createCheckoutSession,
   processPayment,
   sellShares
